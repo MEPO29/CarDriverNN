@@ -25,6 +25,7 @@ Color_line = (255, 0, 0)
 generation = 1
 mutationRate = 90
 FPS = 30
+game_speed = 1  # Velocidad del juego (1 = normal, 2 = x2)
 selectedCars = []
 selected = 0
 lines = True  # Si es True, se muestran las líneas de los sensores del carro
@@ -890,6 +891,12 @@ def select_best_cars(nnCars):
 
 
 
+# Inicialización de parámetros del juego
+generation = 1
+mutationRate = 90
+FPS = 30  # Tasa base de frames por segundo (normal)
+game_speed = 1  # Multiplicador de velocidad del juego (1 = normal, 2 = x2, etc.)
+
 # Bucle principal del juego
 while True:
     for event in pygame.event.get():  # Verificar eventos
@@ -924,6 +931,11 @@ while True:
                 bg = pygame.image.load('randomGeneratedTrackFront.png')
                 bg4 = pygame.image.load('randomGeneratedTrackBack.png')
 
+            # Ajuste de velocidad del juego
+            if event.key == ord("x"):  # Tecla 'x' para aumentar la velocidad del juego (modo x2)
+                game_speed = 2  # Aumenta la velocidad del juego
+            if event.key == ord("z"):  # Tecla 'z' para volver a la velocidad normal
+                game_speed = 1  # Vuelve a la velocidad normal
 
             if event.key == ord("b"):  # Cruzar nuevos carros a partir de los seleccionados automáticamente
                 # Seleccionar los dos mejores carros basados en la distancia progresiva y los checkpoints
@@ -973,50 +985,6 @@ while True:
                 # Limpiar la lista de carros seleccionados
                 selectedCars.clear()
 
-
-            """
-            if event.key == ord("b"):  # Cruzar nuevos carros a partir de los seleccionados
-                if len(selectedCars) == 2:
-                    for nncar in nnCars:
-                        nncar.score = 0
-
-                    alive = num_of_nnCars
-                    generation += 1
-                    selected = 0
-                    nnCars.clear()
-
-                    for i in range(num_of_nnCars):
-                        nnCars.append(Car([inputLayer, hiddenLayer, outputLayer]))
-
-                    for i in range(0, num_of_nnCars - 2, 2):
-                        uniformCrossOverWeights(selectedCars[0], selectedCars[1], nnCars[i], nnCars[i + 1])
-                        uniformCrossOverBiases(selectedCars[0], selectedCars[1], nnCars[i], nnCars[i + 1])
-
-                    nnCars[num_of_nnCars - 2] = selectedCars[0]
-                    nnCars[num_of_nnCars - 1] = selectedCars[1]
-
-                    nnCars[num_of_nnCars - 2].car_image = green_small_car
-                    nnCars[num_of_nnCars - 1].car_image = green_small_car
-
-                    nnCars[num_of_nnCars - 2].resetPosition()
-                    nnCars[num_of_nnCars - 1].resetPosition()
-
-                    nnCars[num_of_nnCars - 2].collided = False
-                    nnCars[num_of_nnCars - 1].collided = False
-
-                    for i in range(num_of_nnCars - 2):
-                        for j in range(mutationRate):
-                            mutateOneWeightGene(nnCars[i], auxcar)
-                            mutateOneWeightGene(auxcar, nnCars[i])
-                            mutateOneBiasesGene(nnCars[i], auxcar)
-                            mutateOneBiasesGene(auxcar, nnCars[i])
-                    if number_track != 1:
-                        for nncar in nnCars:
-                            nncar.x = 140
-                            nncar.y = 610
-
-                    selectedCars.clear()
-            """
             if event.key == ord("m"):  # Cruzar nuevos carros y generar nueva pista aleatoria
                 if len(selectedCars) == 2:
                     for nncar in nnCars:
@@ -1164,4 +1132,5 @@ while True:
 
     redrawGameWindow()
 
-    clock.tick(FPS)
+    # Ajustar la velocidad del juego utilizando la tasa de FPS multiplicada por game_speed
+    clock.tick(FPS * game_speed)  # Si game_speed es 2, corre a x2 la velocidad normal
