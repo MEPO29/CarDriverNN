@@ -61,8 +61,8 @@ def generateRandomMap():
     # WHITE = (255, 255, 255)
     GREEN = (0, 255, 128)
     
-    WINDOW_HEIGHT = 730
-    WINDOW_WIDTH = 1460
+    WINDOW_HEIGHT = 500  #730
+    WINDOW_WIDTH = 1200  #1460
     # These are for the maze/grid, not for the pygame window size
 
     blockSize = 146

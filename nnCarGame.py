@@ -822,6 +822,73 @@ def redrawGameWindow():
 
     pygame.display.update()  # Actualiza la pantalla
 
+# Definir puntos de control en el circuito (ejemplo: lista de coordenadas)
+checkpoints = [(120, 480), (200, 400), (300, 300), (400, 200), (500, 100)]  # Ejemplo de puntos de control
+
+# Función para verificar si el carro ha pasado un checkpoint
+def passed_checkpoint(car, checkpoints):
+    # Distancia mínima para considerar que ha pasado un checkpoint
+    min_dist_to_checkpoint = 50  # Ajusta este valor según el tamaño del circuito
+    for checkpoint in checkpoints:
+        dist_to_checkpoint = calculateDistance(car.x, car.y, checkpoint[0], checkpoint[1])
+        if dist_to_checkpoint < min_dist_to_checkpoint:
+            car.checkpoint_index += 1  # Avanza al siguiente checkpoint
+            return True  # Si pasa el checkpoint
+    return False  # Si no lo ha pasado
+
+# Función para calcular la distancia acumulada si el carro avanza hacia adelante
+def calculate_progressive_distance(car):
+    # Guardamos la última posición conocida del carro
+    if not hasattr(car, 'last_position'):
+        car.last_position = (car.x, car.y)  # Inicializa la posición en el primer frame
+    
+    # Calculamos la distancia movida desde la última posición
+    distance_moved = calculateDistance(car.x, car.y, car.last_position[0], car.last_position[1])
+    
+    # Si el carro ha avanzado hacia adelante, actualizamos la última posición
+    if distance_moved > 0:  # Solo contar si la distancia es positiva (avance hacia adelante)
+        car.last_position = (car.x, car.y)  # Actualizamos la última posición
+        car.score += distance_moved  # Sumamos la distancia al score (distancia progresiva)
+    
+    return car.score  # Retornamos la distancia acumulada (score)
+
+
+# Función para calcular la fitness basada en el avance hacia los checkpoints
+def calculate_fitness_with_checkpoints(car):
+    if not hasattr(car, 'checkpoint_index'):
+        car.checkpoint_index = 0  # Inicializar el índice del checkpoint actual
+    
+    # Verificar si el carro ha pasado un checkpoint
+    if passed_checkpoint(car, checkpoints):
+        car.checkpoint_index += 1  # Si pasa un checkpoint, avanza al siguiente
+    
+    # Calcular la fitness basada en el número de checkpoints alcanzados y la distancia progresiva
+    return car.checkpoint_index * 100 + calculate_progressive_distance(car)  # Mayor peso a los checkpoints
+
+# Penalización para carros que no avanzan
+def penalize_no_progress(car, no_progress_frames=100):
+    if not hasattr(car, 'last_progress_frame'):
+        car.last_progress_frame = 0
+
+    if calculate_progressive_distance(car) == 0:
+        car.last_progress_frame += 1
+    else:
+        car.last_progress_frame = 0  # Reinicia si el carro avanza
+
+    if car.last_progress_frame > no_progress_frames:
+        return -100  # Penalización por no avanzar
+    return 0
+
+# Función para seleccionar los mejores carros considerando checkpoints y penalizaciones
+def select_best_cars(nnCars):
+    sorted_cars = sorted(nnCars, key=lambda car: calculate_fitness_with_checkpoints(car) + penalize_no_progress(car), reverse=True)
+    
+    # Seleccionar los dos mejores carros
+    best_cars = sorted_cars[:2]
+    
+    return best_cars
+
+
 
 # Bucle principal del juego
 while True:
@@ -857,6 +924,57 @@ while True:
                 bg = pygame.image.load('randomGeneratedTrackFront.png')
                 bg4 = pygame.image.load('randomGeneratedTrackBack.png')
 
+
+            if event.key == ord("b"):  # Cruzar nuevos carros a partir de los seleccionados automáticamente
+                # Seleccionar los dos mejores carros basados en la distancia progresiva y los checkpoints
+                best_cars = select_best_cars(nnCars)  # Utiliza la nueva fitness function con checkpoints y penalizaciones
+
+                # Cruzar los dos mejores carros
+                for nncar in nnCars:
+                    nncar.score = 0
+
+                alive = num_of_nnCars
+                generation += 1
+                nnCars.clear()
+
+                for i in range(num_of_nnCars):
+                    nnCars.append(Car([inputLayer, hiddenLayer, outputLayer]))
+
+                # Aplicar cruce uniforme entre los dos mejores carros
+                for i in range(0, num_of_nnCars - 2, 2):
+                    uniformCrossOverWeights(best_cars[0], best_cars[1], nnCars[i], nnCars[i + 1])
+                    uniformCrossOverBiases(best_cars[0], best_cars[1], nnCars[i], nnCars[i + 1])
+
+                # Asignar los mejores carros a la nueva generación
+                nnCars[num_of_nnCars - 2] = best_cars[0]
+                nnCars[num_of_nnCars - 1] = best_cars[1]
+
+                nnCars[num_of_nnCars - 2].car_image = green_small_car
+                nnCars[num_of_nnCars - 1].car_image = green_small_car
+
+                nnCars[num_of_nnCars - 2].resetPosition()
+                nnCars[num_of_nnCars - 1].resetPosition()
+
+                nnCars[num_of_nnCars - 2].collided = False
+                nnCars[num_of_nnCars - 1].collided = False
+
+                for i in range(num_of_nnCars - 2):
+                    for j in range(mutationRate):
+                        mutateOneWeightGene(nnCars[i], auxcar)
+                        mutateOneWeightGene(auxcar, nnCars[i])
+                        mutateOneBiasesGene(nnCars[i], auxcar)
+                        mutateOneBiasesGene(auxcar, nnCars[i])
+
+                # Reposicionar los carros en el inicio para la siguiente generación
+                for nncar in nnCars:
+                    nncar.x = 140
+                    nncar.y = 610
+
+                # Limpiar la lista de carros seleccionados
+                selectedCars.clear()
+
+
+            """
             if event.key == ord("b"):  # Cruzar nuevos carros a partir de los seleccionados
                 if len(selectedCars) == 2:
                     for nncar in nnCars:
@@ -898,7 +1016,7 @@ while True:
                             nncar.y = 610
 
                     selectedCars.clear()
-
+            """
             if event.key == ord("m"):  # Cruzar nuevos carros y generar nueva pista aleatoria
                 if len(selectedCars) == 2:
                     for nncar in nnCars:
