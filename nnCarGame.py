@@ -21,6 +21,42 @@ black = (0, 0, 0)
 gray = pygame.Color('gray12')
 Color_line = (255, 0, 0)
 
+# Checkpoints específicos para cada pista de entrenamiento
+training_checkpoints = {
+    "bg7":[
+        (100, 500),  
+        (350, 300),
+        (500,580),
+        (800, 250),
+        (1400,100),
+        (1200,550),
+        (500, 780)   
+    ]
+    ,
+
+    "secondTrainingTrack":[
+        (350, 300),
+        (600,400),
+        (1000,400),
+        (1100,150),
+        (1200,600),
+        (450, 750),  
+    ]
+
+
+
+
+
+
+}
+
+# Función para actualizar los checkpoints según la pista de entrenamiento seleccionada
+def set_training_checkpoints(track_name):
+    global checkpoints
+    if track_name in training_checkpoints:
+        checkpoints = training_checkpoints[track_name]
+
+
 # Inicialización de parámetros del juego
 generation = 1
 mutationRate = 90
@@ -42,8 +78,13 @@ green_small_car = pygame.image.load('Images/Sprites/green_small.png')
 green_big_car = pygame.image.load('Images/Sprites/green_big.png')
 
 # Carga de imágenes de fondo
+#bg = pygame.image.load('bg7.png')
+#bg4 = pygame.image.load('bg4.png')
+# Inicializar la primera pista de entrenamiento y sus checkpoints
 bg = pygame.image.load('bg7.png')
-bg4 = pygame.image.load('bg4.png')
+bg4 = pygame.image.load('bg4.png')  # Fondo asociado
+set_training_checkpoints("bg7")  # Establecer checkpoints de la primera pista de entrenamiento
+
 
 
 # Función para calcular la distancia entre dos puntos
@@ -824,7 +865,13 @@ def redrawGameWindow():
     pygame.display.update()  # Actualiza la pantalla
 
 # Definir puntos de control en el circuito (ejemplo: lista de coordenadas)
-checkpoints = [(120, 480), (200, 400), (300, 300), (400, 200), (500, 100)]  # Ejemplo de puntos de control
+#checkpoints = [(120, 480), (200, 400), (300, 300), (400, 200), (500, 100)]  # Ejemplo de puntos de control
+
+
+#bg = pygame.image.load('bg7.png')
+
+
+
 
 # Función para verificar si el carro ha pasado un checkpoint
 def passed_checkpoint(car, checkpoints):
@@ -918,7 +965,8 @@ while True:
                 player = not player
             if event.key == ord("d"):  # Alternar visualización de información
                 display_info = not display_info
-            if event.key == ord("n"):  # Generar nueva pista aleatoria
+            if event.key == ord("n"):# Generar nueva pista aleatoria
+                checkpoints = []  
                 number_track = 2
                 for nncar in nnCars:
                     nncar.velocity = 0
@@ -984,6 +1032,22 @@ while True:
 
                 # Limpiar la lista de carros seleccionados
                 selectedCars.clear()
+
+            # En el manejo de eventos, para cambiar entre las pistas de entrenamiento
+            if event.key == ord("t"):  # Cambiar a la segunda pista de entrenamiento
+                # Cambia la pista y reinicia la posición de los carros
+                bg = pygame.image.load('randomGeneratedTrackFront.png')  # Cargar la segunda pista de entrenamiento
+                bg4 = pygame.image.load('randomGeneratedTrackBack.png')  # Fondo asociado
+                set_training_checkpoints("secondTrainingTrack")  # Establecer checkpoints para la segunda pista de entrenamiento
+
+                for nncar in nnCars:
+                    nncar.velocity = 0
+                    nncar.acceleration = 0
+                    nncar.x = 140
+                    nncar.y = 610
+                    nncar.angle = 180
+                    nncar.collided = False
+
 
             if event.key == ord("m"):  # Cruzar nuevos carros y generar nueva pista aleatoria
                 if len(selectedCars) == 2:
